@@ -6,6 +6,10 @@ import Confetti from "react-confetti";
 export default function App() {
   const [dice, setDice] = useState(allNewDice());
   const [tenzies, setTenzies] = useState(false);
+  const [count, setCount] = useState(0);
+  const [highscore, setHighscore] = useState(
+    JSON.parse(localStorage.getItem("highscore")) || 0
+  );
 
   useEffect(() => {
     const allHeld = dice.every((die) => die.isHeld);
@@ -15,6 +19,15 @@ export default function App() {
       setTenzies(true);
     }
   }, [dice]);
+
+  function storeHighscore() {
+    if (highscore === 0 || count < highscore)
+      localStorage.setItem("highscore", JSON.stringify(count));
+  }
+
+  function updateHighscore() {
+    setHighscore(JSON.parse(localStorage.getItem("highscore")));
+  }
 
   function generateNewDie() {
     return {
@@ -33,16 +46,32 @@ export default function App() {
   }
 
   function rollDice() {
+    setDice((oldDice) =>
+      oldDice.map((die) => {
+        return die.isHeld ? die : generateNewDie();
+      })
+    );
+  }
+
+  function updateCounter() {
+    setCount((prevCount) => prevCount + 1);
+  }
+
+  function rollAndCount() {
     if (!tenzies) {
-      setDice((oldDice) =>
-        oldDice.map((die) => {
-          return die.isHeld ? die : generateNewDie();
-        })
-      );
+      rollDice();
+      updateCounter();
     } else {
       setTenzies(false);
       setDice(allNewDice());
+      resetCount();
+      storeHighscore();
+      updateHighscore();
     }
+  }
+
+  function resetCount() {
+    setCount(0);
   }
 
   function holdDice(id) {
@@ -69,10 +98,13 @@ export default function App() {
         <h1 className="title">Tenzies</h1>
         <p className="instructions">
           Roll until all dice are the same. Click each die to freeze it at its
-          current value between rolls.
+          current value between rolls. The lower the number of rolls, the
+          better!
         </p>
         <div className="dice-container">{diceElements}</div>
-        <button className="roll-dice" onClick={rollDice}>
+        <h2 className="high-score">High-Score: {highscore}</h2>
+        <h2 className="number-of-rolls">Number of Rolls: {count}</h2>
+        <button className="roll-dice" onClick={rollAndCount}>
           {tenzies ? "New Game" : "Roll"}
         </button>
       </main>
